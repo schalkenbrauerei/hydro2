@@ -1,0 +1,92 @@
+
+blueprint:
+  name: Hydroponik Steuerung (MQTT)
+  description: |
+    Steuerung und Anzeige der Hydroponik-Parameter via MQTT. 
+    Ermöglicht Konfiguration von Pumpenzeiten, Ruhezeiten und TDS-Faktor.
+  domain: automation
+  source_url: https://github.com/dein-repo/hydroponik-blueprint
+  input:
+    laufzeit:
+      name: Laufzeit (Minuten)
+      selector:
+        number:
+          min: 1
+          max: 60
+          unit_of_measurement: "Min"
+    pausenzeit:
+      name: Pausenzeit (Minuten)
+      selector:
+        number:
+          min: 1
+          max: 60
+          unit_of_measurement: "Min"
+    tds_factor:
+      name: TDS Kalibrierfaktor
+      selector:
+        number:
+          min: 0.5
+          max: 2.0
+          step: 0.01
+    ruhe_start:
+      name: Ruhezeit Start
+      selector:
+        time: {}
+    ruhe_ende:
+      name: Ruhezeit Ende
+      selector:
+        time: {}
+
+trigger:
+  - platform: state
+    entity_id:
+      - !input laufzeit
+      - !input pausenzeit
+      - !input tds_factor
+      - !input ruhe_start
+      - !input ruhe_ende
+
+action:
+  - choose:
+      - conditions:
+          - condition: state
+            entity_id: !input laufzeit
+        sequence:
+          - service: mqtt.publish
+            data:
+              topic: hydroponik/config/laufzeit/set
+              payload_template: "{{ states[inputs.laufzeit] | int }}"
+      - conditions:
+          - condition: state
+            entity_id: !input pausenzeit
+        sequence:
+          - service: mqtt.publish
+            data:
+              topic: hydroponik/config/pausenzeit/set
+              payload_template: "{{ states[inputs.pausenzeit] | int }}"
+      - conditions:
+          - condition: state
+            entity_id: !input tds_factor
+        sequence:
+          - service: mqtt.publish
+            data:
+              topic: hydroponik/config/tds_factor/set
+              payload_template: "{{ states[inputs.tds_factor] }}"
+      - conditions:
+          - condition: state
+            entity_id: !input ruhe_start
+        sequence:
+          - service: mqtt.publish
+            data:
+              topic: hydroponik/config/ruhe_start/set
+              payload_template: "{{ states[inputs.ruhe_start][0:5] }}"
+      - conditions:
+          - condition: state
+            entity_id: !input ruhe_ende
+        sequence:
+          - service: mqtt.publish
+            data:
+              topic: hydroponik/config/ruhe_ende/set
+              payload_template: "{{ states[inputs.ruhe_ende][0:5] }}"
+
+mode: single
