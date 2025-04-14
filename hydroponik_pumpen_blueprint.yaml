@@ -1,0 +1,24 @@
+blueprint:
+  name: Hydroponik Pumpe Zeitsteuerung
+  description: Schaltet die Pumpe von 07:00 bis 21:00 im 15-Minuten-Intervall automatisch ein und aus.
+  domain: automation
+  input:
+    pump_switch:
+      name: Pumpenschalter (MQTT)
+      selector:
+        entity:
+          domain: switch
+
+trigger:
+  - platform: time_pattern
+    minutes: "/15"
+
+condition:
+  - condition: time
+    after: "07:00:00"
+    before: "21:00:00"
+
+action:
+  - service: "switch.toggle"
+    target:
+      entity_id: !input pump_switch
